@@ -16,7 +16,3 @@ export default async function handler(req, res) {
     res.status(500).json({ error: "토큰 발급 실패", details: error.message });
   }
 }
-
-export default function handler(req, res) {
-  res.status(200).json({ message: "oauth.js 정상 동작" });
-}
