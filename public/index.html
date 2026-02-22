@@ -8,13 +8,24 @@
       font-family: Arial, sans-serif;
       text-align: center;
       margin: 40px;
+      background-color: #f9f9f9;
+    }
+    header {
+      margin-bottom: 20px;
+    }
+    header img {
+      width: 200px;
+      margin-bottom: 10px;
     }
     h1 {
       margin-bottom: 20px;
+      font-size: 20px;
+      line-height: 1.5;
     }
     .controls {
       display: flex;
       justify-content: center;
+      flex-wrap: wrap;
       gap: 15px;
       margin-top: 20px;
     }
@@ -26,6 +37,7 @@
       background-color: #4CAF50;
       color: white;
       cursor: pointer;
+      flex: 1 1 120px;
     }
     button:hover {
       background-color: #45a049;
@@ -36,11 +48,20 @@
       border: 1px solid #ccc;
       width: 600px;
       height: 150px;
+      background-color: white;
+    }
+    audio {
+      margin-top: 20px;
+      width: 600px;
     }
   </style>
 </head>
 <body>
-  <h1>Voience(보이언스)<br>녹음 혹은 음성파일 업로드 후 보내기 버튼을 눌러주세요</h1>
+  <header>
+    <!-- 로고 이미지 -->
+    <img src="logo.png" alt="Voience 로고">
+    <h1>Voience(보이언스)<br>녹음 혹은 음성파일 업로드 후 보내기 버튼을 눌러주세요</h1>
+  </header>
 
   <canvas id="visualizer"></canvas>
 
@@ -48,8 +69,11 @@
     <button id="record">녹음 시작</button>
     <button id="stop">녹음 종료</button>
     <button id="upload">업로드</button>
+    <button id="play">플레이</button>
     <button id="send">보내기</button>
   </div>
+
+  <audio id="player" controls style="display:none;"></audio>
 
   <script>
     let mediaRecorder;
@@ -113,6 +137,15 @@
       const res = await fetch("/api/upload", { method: "POST", body: formData });
       const data = await res.json();
       console.log(data.message || data.error);
+    };
+
+    document.getElementById("play").onclick = () => {
+      const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const player = document.getElementById("player");
+      player.src = audioUrl;
+      player.style.display = "block";
+      player.play();
     };
 
     document.getElementById("send").onclick = () => {
