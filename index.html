@@ -31,8 +31,8 @@
       const formData = new FormData();
       formData.append("file", audioBlob, "recording.wav");
 
-      await fetch("/upload", { method: "POST", body: formData });
-      alert("업로드 완료!");
+      await fetch("/api/upload", { method: "POST", body: formData });
+      alert("업로드 완료! 카카오톡으로 전송됩니다.");
     };
   </script>
 </body>

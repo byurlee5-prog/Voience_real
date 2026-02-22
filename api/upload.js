@@ -1,32 +1,35 @@
 import multer from "multer";
-import fs from "fs";
+import nextConnect from "next-connect";
 import axios from "axios";
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
 
 const upload = multer({ dest: "/tmp" });
 
-export default function handler(req, res) {
-  upload.single("file")(req, res, async (err) => {
-    if (err) return res.status(500).send("업로드 실패");
+const apiRoute = nextConnect({
+  onError(error, req, res) {
+    res.status(501).json({ error: `에러 발생: ${error.message}` });
+  },
+  onNoMatch(req, res) {
+    res.status(405).json({ error: `Method '${req.method}' Not Allowed` });
+  },
+});
 
-    try {
-      const ACCESS_TOKEN = process.env.KAKAO_ACCESS_TOKEN;
-      const filePath = req.file.path;
+apiRoute.use(upload.single("file"));
 
-      await axios.post("https://kapi.kakao.com/v2/api/talk/memo/media/upload", {
-        file: fs.createReadStream(filePath)
-      }, {
-        headers: { Authorization: `Bearer ${ACCESS_TOKEN}` }
-      });
+apiRoute.post(async (req, res) => {
+  try {
+    // 카카오톡 API 호출 (환경변수 필요)
+    await axios.post("https://kapi.kakao.com/v2/api/talk/memo/default/send", {
+      object_type: "text",
+      text: "새 음성 파일이 업로드되었습니다!",
+      link: { web_url: "https://voience-real.vercel.app" }
+    }, {
+      headers: { Authorization: `Bearer ${process.env.KAKAO_ACCESS_TOKEN}` }
+    });
 
-      res.status(200).send("카카오톡으로 파일 전송 완료!");
-    } catch (error) {
-      res.status(500).send("전송 실패");
-    }
-  });
-}
+    res.status(200).json({ message: "카카오톡으로 전송 완료!" });
+  } catch (err) {
+    res.status(500).json({ error: "카카오톡 전송 실패: " + err.message });
+  }
+});
+
+export default apiRoute;
