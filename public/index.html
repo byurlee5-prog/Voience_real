@@ -6,7 +6,6 @@
   <style>
     body {
       font-family: 'Roboto', Arial, sans-serif;
-      text-align: center;
       margin: 0;
       background-color: #F3F4F6;
       color: #1E3A8A;
@@ -15,7 +14,7 @@
       background-color: #1E3A8A;
       color: white;
       padding: 30px 20px;
-      margin-bottom: 30px;
+      text-align: center;
     }
     header img {
       width: 180px;
@@ -26,13 +25,17 @@
       line-height: 1.6;
       margin: 0;
     }
+    main {
+      max-width: 800px;
+      margin: 30px auto;
+      text-align: center;
+    }
     .controls {
       display: flex;
       justify-content: center;
       flex-wrap: wrap;
       gap: 20px;
-      margin: 30px auto;
-      max-width: 700px;
+      margin-top: 20px;
     }
     button {
       padding: 14px 24px;
@@ -58,14 +61,16 @@
       display: block;
       margin: 20px auto;
       border: 1px solid #ccc;
-      width: 700px;
+      width: 100%;
+      max-width: 700px;
       height: 180px;
       background-color: white;
       border-radius: 8px;
     }
     audio {
       margin-top: 20px;
-      width: 700px;
+      width: 100%;
+      max-width: 700px;
     }
     input[type="file"] {
       display: none;
@@ -78,19 +83,116 @@
     <h1>Voience(보이언스)<br>녹음 혹은 음성파일 업로드 후 보내기 버튼을 눌러주세요</h1>
   </header>
 
-  <canvas id="visualizer"></canvas>
+  <main>
+    <canvas id="visualizer"></canvas>
 
-  <div class="controls">
-    <button id="record">녹음 시작</button>
-    <button id="stop">녹음 종료</button>
-    <button id="uploadBtn">업로드</button>
-    <input type="file" id="fileInput" accept="audio/*">
-    <button id="play">플레이</button>
-    <button id="send">보내기</button>
-  </div>
+    <div class="controls">
+      <button id="record">녹음 시작</button>
+      <button id="stop">녹음 종료</button>
+      <button id="uploadBtn">업로드</button>
+      <input type="file" id="fileInput" accept="audio/*">
+      <button id="play">플레이</button>
+      <button id="send">보내기</button>
+    </div>
 
-  <audio id="player" controls style="display:none;"></audio>
+    <audio id="player" controls style="display:none;"></audio>
+  </main>
 
-  <!-- 기존 JS 로직은 그대로 유지 -->
+  <script>
+    let mediaRecorder;
+    let audioChunks = [];
+    let audioBlob;
+    let audioContext, analyser, source, dataArray, canvas, ctx;
+
+    canvas = document.getElementById("visualizer");
+    ctx = canvas.getContext("2d");
+
+    function drawWaveform() {
+      requestAnimationFrame(drawWaveform);
+      if (!analyser) return;
+      analyser.getByteTimeDomainData(dataArray);
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#2563EB";
+      ctx.beginPath();
+      let sliceWidth = canvas.width * 1.0 / dataArray.length;
+      let x = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        let v = dataArray[i] / 128.0;
+        let y = v * canvas.height / 2;
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+        x += sliceWidth;
+      }
+      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.stroke();
+    }
+
+    document.getElementById("record").onclick = async () => {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioContext.createAnalyser();
+      source = audioContext.createMediaStreamSource(stream);
+      source.connect(analyser);
+      analyser.fftSize = 2048;
+      dataArray = new Uint8Array(analyser.fftSize);
+      drawWaveform();
+
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+      mediaRecorder.start();
+    };
+
+    document.getElementById("stop").onclick = () => {
+      mediaRecorder.stop();
+      audioContext.close();
+      mediaRecorder.onstop = () => {
+        audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+      };
+    };
+
+    document.getElementById("uploadBtn").onclick = () => {
+      document.getElementById("fileInput").click();
+    };
+
+    document.getElementById("fileInput").onchange = (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        audioBlob = file;
+        const audioUrl = URL.createObjectURL(file);
+        const player = document.getElementById("player");
+        player.src = audioUrl;
+        player.style.display = "block";
+      }
+    };
+
+    document.getElementById("play").onclick = () => {
+      if (audioBlob) {
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const player = document.getElementById("player");
+        player.src = audioUrl;
+        player.style.display = "block";
+        player.play();
+      }
+    };
+
+    document.getElementById("send").onclick = async () => {
+      if (!audioBlob) {
+        alert("녹음 또는 업로드된 파일이 없습니다.");
+        return;
+      }
+      const formData = new FormData();
+      formData.append("file", audioBlob, "audio.wav");
+
+      const res = await fetch("/api/send", { method: "POST", body: formData });
+      const data = await res.json();
+      alert(data.message || data.error);
+    };
+  </script>
 </body>
 </html>

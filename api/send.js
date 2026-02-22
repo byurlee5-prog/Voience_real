@@ -18,7 +18,7 @@ export default async function handler(req, res) {
       }
 
       try {
-        // 파일을 읽어서 카카오톡 API로 전송 (예시)
+        // 파일 읽기
         const filePath = files.file[0].filepath;
         const fileData = fs.readFileSync(filePath);
 
