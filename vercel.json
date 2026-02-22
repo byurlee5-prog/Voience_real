@@ -1,8 +1,10 @@
 {
-  "builds": [
-    { "src": "public/index.html", "use": "@vercel/static" }
-  ],
-  "routes": [
-    { "src": "/", "dest": "public/index.html" }
-  ]
+  "functions": {
+    "api/oauth.js": {
+      "runtime": "nodejs18.x"
+    },
+    "api/send.js": {
+      "runtime": "nodejs18.x"
+    }
+  }
 }
