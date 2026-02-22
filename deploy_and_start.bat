@@ -1,5 +1,5 @@
 @echo off
-cd /d C:\Users\byurh\Desktop\voience
+cd /d C:\Users\byurl\Desktop\voience
 echo 코드 변경사항을 GitHub에 반영합니다...
 git add .
 git commit -m "update site"
