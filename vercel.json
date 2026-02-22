@@ -1,9 +1,9 @@
 {
   "functions": {
-    "api/oauth.js": {
+    "pages/api/oauth.js": {
       "runtime": "nodejs18.x"
     },
-    "api/send.js": {
+    "pages/api/send.js": {
       "runtime": "nodejs18.x"
     }
   }
