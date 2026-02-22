@@ -5,6 +5,4 @@ git add .
 git commit -m "update site"
 git push origin main
 echo Vercel이 자동으로 배포를 시작합니다.
-echo 로컬 서버도 실행합니다...
-node server.js
 pause
