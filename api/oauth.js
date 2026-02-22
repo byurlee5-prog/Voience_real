@@ -6,8 +6,8 @@ export default async function handler(req, res) {
       params: {
         grant_type: "authorization_code",
         client_id: "6b491be07b2f726ae639cb5db73dc223", // REST API 키
-        redirect_uri: "https://voience-real.vercel.app/api/oauth", // 등록된 Redirect URI
-        code: "FlHLPwuysmbJ7HvWCbhhpr-Z9zV49cpY39roRXZeJJ7WUBZRclInzQAAAAQKFyEtAAABnIUF5nL_A_o_BVb6-Q" // ✅ 인증 코드
+        redirect_uri: "https://voience-real.vercel.app/api/oauth", // Redirect URI
+        code: "yFfulvE6o7aNXZ6zsrrkTY233W08MAFXNFibtogvJMlArlFaNDmm6QAAAAQKDQ0hAAABnIUKRW6YFzyUYZmfhQ" // 인증 코드
       }
     });
     const { access_token } = response.data;
