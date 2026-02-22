@@ -54,6 +54,9 @@
       margin-top: 20px;
       width: 600px;
     }
+    input[type="file"] {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -68,7 +71,8 @@
   <div class="controls">
     <button id="record">녹음 시작</button>
     <button id="stop">녹음 종료</button>
-    <button id="upload">업로드</button>
+    <button id="uploadBtn">업로드</button>
+    <input type="file" id="fileInput" accept="audio/*">
     <button id="play">플레이</button>
     <button id="send">보내기</button>
   </div>
@@ -78,6 +82,7 @@
   <script>
     let mediaRecorder;
     let audioChunks = [];
+    let audioBlob;
     let audioContext, analyser, source, dataArray, canvas, ctx;
 
     canvas = document.getElementById("visualizer");
@@ -127,25 +132,36 @@
     document.getElementById("stop").onclick = () => {
       mediaRecorder.stop();
       audioContext.close();
+      mediaRecorder.onstop = () => {
+        audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+      };
     };
 
-    document.getElementById("upload").onclick = async () => {
-      const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-      const formData = new FormData();
-      formData.append("file", audioBlob, "recording.wav");
+    // 업로드 버튼 → 파일 선택창 열기
+    document.getElementById("uploadBtn").onclick = () => {
+      document.getElementById("fileInput").click();
+    };
 
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
-      const data = await res.json();
-      console.log(data.message || data.error);
+    // 파일 선택 시 오디오 로드
+    document.getElementById("fileInput").onchange = (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        audioBlob = file;
+        const audioUrl = URL.createObjectURL(file);
+        const player = document.getElementById("player");
+        player.src = audioUrl;
+        player.style.display = "block";
+      }
     };
 
     document.getElementById("play").onclick = () => {
-      const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const player = document.getElementById("player");
-      player.src = audioUrl;
-      player.style.display = "block";
-      player.play();
+      if (audioBlob) {
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const player = document.getElementById("player");
+        player.src = audioUrl;
+        player.style.display = "block";
+        player.play();
+      }
     };
 
     document.getElementById("send").onclick = () => {
