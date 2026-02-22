@@ -3,27 +3,106 @@
 <head>
   <meta charset="UTF-8">
   <title>Voience Real</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 40px;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 20px;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      border: 1px solid #ccc;
+      width: 600px;
+      height: 150px;
+    }
+  </style>
 </head>
 <body>
-  <h1>Voience Real 사이트</h1>
-  <button id="record">녹음 시작</button>
-  <button id="stop">녹음 종료</button>
-  <button id="upload">업로드</button>
+  <h1>Voience(보이언스)<br>녹음 혹은 음성파일 업로드 후 보내기 버튼을 눌러주세요</h1>
+
+  <canvas id="visualizer"></canvas>
+
+  <div class="controls">
+    <button id="record">녹음 시작</button>
+    <button id="stop">녹음 종료</button>
+    <button id="upload">업로드</button>
+    <button id="send">보내기</button>
+  </div>
+
   <script>
     let mediaRecorder;
     let audioChunks = [];
+    let audioContext, analyser, source, dataArray, canvas, ctx;
+
+    canvas = document.getElementById("visualizer");
+    ctx = canvas.getContext("2d");
+
+    function drawWaveform() {
+      requestAnimationFrame(drawWaveform);
+      if (!analyser) return;
+      analyser.getByteTimeDomainData(dataArray);
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "black";
+      ctx.beginPath();
+      let sliceWidth = canvas.width * 1.0 / dataArray.length;
+      let x = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        let v = dataArray[i] / 128.0;
+        let y = v * canvas.height / 2;
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+        x += sliceWidth;
+      }
+      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.stroke();
+    }
 
     document.getElementById("record").onclick = async () => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioContext.createAnalyser();
+      source = audioContext.createMediaStreamSource(stream);
+      source.connect(analyser);
+      analyser.fftSize = 2048;
+      dataArray = new Uint8Array(analyser.fftSize);
+      drawWaveform();
+
       mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
       mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
       mediaRecorder.start();
-      alert("녹음 시작!");
     };
 
     document.getElementById("stop").onclick = () => {
       mediaRecorder.stop();
-      alert("녹음 종료!");
+      audioContext.close();
     };
 
     document.getElementById("upload").onclick = async () => {
@@ -33,7 +112,12 @@
 
       const res = await fetch("/api/upload", { method: "POST", body: formData });
       const data = await res.json();
-      alert(data.message || data.error);
+      console.log(data.message || data.error);
+    };
+
+    document.getElementById("send").onclick = () => {
+      // 추후 카카오톡 API 연동 예정
+      console.log("보내기 버튼 눌림 - 카톡 연동 예정");
     };
   </script>
 </body>
