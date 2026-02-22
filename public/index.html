@@ -61,7 +61,6 @@
 </head>
 <body>
   <header>
-    <!-- 로고 이미지 -->
     <img src="logo.png" alt="Voience 로고">
     <h1>Voience(보이언스)<br>녹음 혹은 음성파일 업로드 후 보내기 버튼을 눌러주세요</h1>
   </header>
@@ -137,12 +136,10 @@
       };
     };
 
-    // 업로드 버튼 → 파일 선택창 열기
     document.getElementById("uploadBtn").onclick = () => {
       document.getElementById("fileInput").click();
     };
 
-    // 파일 선택 시 오디오 로드
     document.getElementById("fileInput").onchange = (event) => {
       const file = event.target.files[0];
       if (file) {
@@ -164,9 +161,17 @@
       }
     };
 
-    document.getElementById("send").onclick = () => {
-      // 추후 카카오톡 API 연동 예정
-      console.log("보내기 버튼 눌림 - 카톡 연동 예정");
+    document.getElementById("send").onclick = async () => {
+      if (!audioBlob) {
+        alert("녹음 또는 업로드된 파일이 없습니다.");
+        return;
+      }
+      const formData = new FormData();
+      formData.append("file", audioBlob, "audio.wav");
+
+      const res = await fetch("/api/send", { method: "POST", body: formData });
+      const data = await res.json();
+      alert(data.message || data.error);
     };
   </script>
 </body>
