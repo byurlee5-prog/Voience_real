@@ -1,5 +1,4 @@
 import formidable from "formidable";
-import fs from "fs";
 import axios from "axios";
 
 export const config = { api: { bodyParser: false } };
